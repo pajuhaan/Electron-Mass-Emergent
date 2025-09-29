@@ -17,7 +17,7 @@ Planck-only scaling, two independent closures (Path A/B), and a geometry-only fi
   {32\pi\,\alpha\,K_{\rm EM}^{\rm eff}}\right]^{1/4}.$$
 
 - **Path B — RLTM (Tangential Tension closure)**  
-  Ward-preserving product kernels; includes the mode-$M{=}1$ remainder $f_{M1}$; weight $e^{-\sigma_B/\alpha}$ with $\sigma_B=\pi/4$.
+  Ward-preserving product kernels; includes the mode $M=1$ remainder $f_{M1}$; weight $e^{-\sigma_B/\alpha}$ with $\sigma_B=\pi/4$.
 
   $$m_B = \frac{D\,\hbar}{c\,\ell_P}\,
   \sqrt{\frac{\rho\,K_T^{\rm eff}\,e^{-\sigma_B/\alpha}\,(1+f_{M1})}
@@ -59,7 +59,7 @@ python Relator_Electron_Emergent_Mass.py
 python "Uncertainty budget from physical constants.py"
 ````
 
-Typical outputs are saved in `outputs/` (e.g., `mass_pathA.txt`, `mass_pathB.txt`, `alpha_identity.txt`).
+Typical outputs are saved (e.g., `checksum.txt`).
 
 ---
 
