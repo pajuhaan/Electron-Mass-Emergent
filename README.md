@@ -1,4 +1,4 @@
-# Electron Mass Emergent — Relator Kinematics [Reproducible Code]
+# Electron Mass Emergent — Relator [Reproducible Code]
 
 Minimal, clean code to reproduce the numerics and figures for **Electron Mass from Relator Kinematics**.  
 Planck-only scaling, two independent closures (Path A/B), and a geometry-only fine-structure identity — **no fits**.
