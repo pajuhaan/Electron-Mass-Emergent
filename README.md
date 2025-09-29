@@ -12,14 +12,14 @@ Planck-only scaling, two independent closures (Path A/B), and a geometry-only fi
 - **Path A — RLVM (Vacuum-in-Volume closure)**  
   Local EM softening only (from $\Lambda_{\rm ind}$); scalar S4 completion; dilation weight $e^{-\sigma_A/\alpha}$ with $\sigma_A=\pi/2$.
 
-  $$m_A \;=\; \frac{D\,\hbar}{c\,\ell_P}\,
+  $$m_A = \frac{D\,\hbar}{c\,\ell_P}\,
   \left[\frac{3\,N_{\rm eff}^{\rm eff}\,\zeta_C^{4}\,\rho^{3}\,e^{-\sigma_A/\alpha}}
   {32\pi\,\alpha\,K_{\rm EM}^{\rm eff}}\right]^{1/4}.$$
 
 - **Path B — RLTM (Tangential Tension closure)**  
   Ward-preserving product kernels; includes the mode-$M{=}1$ remainder $f_{M1}$; weight $e^{-\sigma_B/\alpha}$ with $\sigma_B=\pi/4$.
 
-  $$m_B \;=\; \frac{D\,\hbar}{c\,\ell_P}\,
+  $$m_B = \frac{D\,\hbar}{c\,\ell_P}\,
   \sqrt{\frac{\rho\,K_T^{\rm eff}\,e^{-\sigma_B/\alpha}\,(1+f_{M1})}
   {2\,\alpha\,K_{\rm EM}^{\rm raw,eff}}}, \qquad
   f_{M1}=\frac{\alpha}{2}\,e^{-y^{*2}/2}\,y^{*2}.$$
