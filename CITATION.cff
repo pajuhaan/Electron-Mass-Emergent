@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: Electron Mass from Relator Kinematics — Reproducible Code
+message: If you use this code, please cite the versioned Zenodo DOI.
+authors:
+  - family-names: Pajuhaan
+    given-names: Mehrdad
+version: v1.0
+doi: 10.5281/zenodo.17219279
+date-released: 2025-10-01
+repository-code: https://github.com/<org>/<repo>
