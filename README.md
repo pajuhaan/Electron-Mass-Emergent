@@ -1,5 +1,7 @@
 # Electron Mass Emergent — Relator [Reproducible Code]
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17219279.svg)](https://doi.org/10.5281/zenodo.17219279)
+
 Minimal, clean code to reproduce the numerics and figures for **Electron Mass from Relator Kinematics**.  
 Planck-only scaling, two independent closures (Path A/B), and a geometry-only fine-structure identity — **no fits**.
 
