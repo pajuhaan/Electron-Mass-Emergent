@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Copyright 2025 by Mehrdad Pajuhaan (pajuhaan@gmail.com)
 """
 Numeric Uncertainty Propagation (standalone)
 - Uses Relator_Electron_Emergent_Mass.py in the same folder
