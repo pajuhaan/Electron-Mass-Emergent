@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2025 by Mehrdad Pajuhaan (pajuhaan@gmail.com)
+# Copyright 2025 by Mehrdad Pajuhaan
 # =============================================================================
-#  Relator — Emergent Electron Mass (PAPER-ALIGNED, POST-UPDATE NAMING)
+#  Relator — Emergent Electron Mass (PAPER-ALIGNED NAMING: Γ_str, K_ring, ζ_ring)
 #  --------------------------------------------------------------------
-#  This program reproduces the paper's numerics with the *updated* notation:
-#    • Path A (scalar):  K_EM^{mid,A}  →  K_EM^{eff,A}
-#        - mid  = raw × s_G(κ)   (purely geometric Gaussian softening on S¹)
-#        - effA = mid × [1 − ½ ρ² ζ_soft], with ζ_soft from Λ_ind ONLY
-#      Channel counting: N_eff^{raw,A} → N_eff^{eff,A} (no "soft" level).
+#  This program reproduces the paper's numerics with notation matched to the
+#  manuscript output:
+#    • Γ_str(y)  (was S(y))
+#    • K_ring(y) (was K0(y)),  Λ_ring(y) (was Λ(y)),  ζ_ring(y) (was ζ_geom)
+#    • Printed labels now use Γ_str, K_ring, Λ_ring, ζ_ring across reports
 #
-#    • Path B (vector): Ward-preserving product completions maintained:
-#        K_T^eff = K_T·(1 − ½ρ² ζ_geom)·(1 − ½ρ² ζ(α))
-#        K_EM^{raw,eff} = K_EM^{raw}·(1 + ¼ρ² ζ_geom)·(1 + ¼ρ² ζ(α))
+#  Path A (scalar):  K_EM^{mid,A} → K_EM^{eff,A}
+#    - mid  = raw × s_G(κ)                 (Gaussian softening on S¹)
+#    - effA = mid × [1 − ½ ρ² ζ_soft],     (ζ_soft from Λ_ind ONLY)
+#    - N_eff^{eff,A} = N_eff^{raw,A} × [1 + ρ² 𝓓_phys^S4(α, ζ(α))]
 #
-#  The code prints *all* named intermediate quantities used in the paper,
-#  performs per-term toggle audits, propagates constant uncertainties, and
-#  saves a checksumed report (checksum.txt) for reproducibility.
+#  Path B (vector), Ward-preserving products:
+#    K_T^eff = K_T·(1 − ½ρ² ζ_ring)·(1 − ½ρ² ζ(α))
+#    K_EM^{raw,eff} = K_EM^{raw}·(1 + ¼ρ² ζ_ring)·(1 + ¼ρ² ζ(α))
+#
+#  The code prints all named intermediates with paper-style symbols, performs
+#  per-term toggle audits, propagates constant uncertainties, and saves a
+#  checksumed report for reproducibility.
 #
 #  IMPORTANT (No double counting):
 #    - Path A's local EM kernel never uses ζ(α); it uses ζ_soft from Λ_ind only.
@@ -101,37 +106,36 @@ ITOT    = mp.mpf('1')/6 - mp.mpf('1')/(4*pi**2)   # ∫_0^1 x² sin²(πx) dx
 
 # ============================= Ring integrals (S¹) ===========================
 def erfcx(z): return mp.e**(z**2) * mp.erfc(z)  # scaled erfc
-
 def a_of_delta(Delta): return 2*mp.sin(Delta/2)
 
 def J_of(a, y):
     r"""J(a,y)=√π/(2y)·erfcx(a/(2y))  (Gaussian overlap kernel; >0 for y>0)."""
     return mp.sqrt(pi)/(2*y) * erfcx(a/(2*y))
 
-def K0_of(y):
-    r"""K0(y)=(1/π)∫_0^π J(a(Δ),y)dΔ — local EM azimuthal average on the ring."""
+def K_ring_of(y):
+    r"""K_ring(y)=(1/π)∫_0^π J(a(Δ),y)dΔ — local EM azimuthal average on the ring."""
     return mp.quad(lambda D: J_of(a_of_delta(D), y), [0, pi]) / pi
 
-def Lam_of(y):
-    r"""Λ(y)=(1/π)∫_0^π cosΔ·J(a(Δ),y)dΔ — local vector overlap."""
+def Lambda_ring_of(y):
+    r"""Λ_ring(y)=(1/π)∫_0^π cosΔ·J(a(Δ),y)dΔ — local vector overlap on the ring."""
     return mp.quad(lambda D: mp.cos(D) * J_of(a_of_delta(D), y), [0, pi]) / pi
 
-def S_of(y, alpha):
-    r"""S(y;α)=2 + ζ_geom(y) + α K0(y)/(8π²),  with  ζ_geom(y)=[K0(y)/(2π²)]·Λ(y)."""
-    K0 = K0_of(y); Lam = Lam_of(y)
-    zeta_geom = (K0/(2*pi**2))*Lam
-    S = (2 + zeta_geom) + alpha * K0 / (8*pi**2)
-    return S, zeta_geom, K0, Lam
+def Gamma_str_of(y, alpha):
+    r"""Γ_str(y;α)=2 + ζ_ring(y) + α K_ring(y)/(8π²), where ζ_ring(y)=[K_ring/(2π²)]·Λ_ring."""
+    Kring = K_ring_of(y); Lring = Lambda_ring_of(y)
+    zeta_ring = (Kring/(2*pi**2))*Lring
+    Gamma = (2 + zeta_ring) + alpha * Kring / (8*pi**2)
+    return Gamma, zeta_ring, Kring, Lring
 
-def dS_dy(y, alpha):
+def dGamma_dy(y, alpha):
     h = mp.mpf('5e-7')*(1+abs(y))
-    Sp,_,_,_ = S_of(y+h, alpha); Sm,_,_,_ = S_of(y-h, alpha)
-    return (Sp - Sm)/(2*h)
+    Gp,_,_,_ = Gamma_str_of(y+h, alpha); Gm,_,_,_ = Gamma_str_of(y-h, alpha)
+    return (Gp - Gm)/(2*h)
 
 def F_shape(y, alpha):
-    r"""Stationarity on S¹:  3 S'/S + (2/y − y) = 0."""
-    S,_,_,_ = S_of(y, alpha)
-    return 3*dS_dy(y, alpha)/S + (2/y - y)
+    r"""Stationarity on S¹:  3 Γ'/Γ + (2/y − y) = 0."""
+    Gamma,_,_,_ = Gamma_str_of(y, alpha)
+    return 3*dGamma_dy(y, alpha)/Gamma + (2/y - y)
 
 def solve_y_star(alpha, y_lo=mp.mpf('0.35'), y_hi=mp.mpf('3.0'), step=mp.mpf('0.02')):
     """Bracket + bisection; fallback to argmin |F| if no sign change is found."""
@@ -392,8 +396,8 @@ def N_eff_raw_A_closed(x):
 def K_T_closed(x): return 2*kappa_tension(x)
 
 # ============================= Geometric RG locks ============================
-def beta0_from_DS(D_over_S): return (6/pi)*(D_over_S)       # D/S=4/3 → β0=8/π
-def sigmas_from_beta0(beta0): return 4/beta0, 2/beta0       # (σ_A, σ_B)
+def beta0_from_DS(D_over_Gamma): return (6/pi)*(D_over_Gamma)   # D/Γ=4/3 → β0=8/π
+def sigmas_from_beta0(beta0): return 4/beta0, 2/beta0          # (σ_A, σ_B)
 
 # =============================== Mass formulae ===============================
 def mass_path_A(ELL_P, D, rho, KEM_eff_A, N_eff_eff_A, ZETA_C, sigma_A, alpha, C, HBAR, ECHG):
@@ -431,16 +435,16 @@ def alpha_eq_closed(KEM_eff_A, N_eff_eff_A, rho, K_T, K_T_eff_B, K_EM_raw, K_EM_
 
 # ============================ Parallel helpers ===============================
 def _mp_init(dps): mp.mp.dps = dps
-def _task_K0(y, dps):     _mp_init(dps); return K0_of(y)
-def _task_Lam(y, dps):    _mp_init(dps); return Lam_of(y)
-def _task_Kraw(x, dps):   _mp_init(dps); return K_EM_raw_closed(x)
-def _task_KmidA(x, dps):  _mp_init(dps); return K_EM_mid_A_closed(x)
+def _task_Kring(y, dps):   _mp_init(dps); return K_ring_of(y)
+def _task_Lring(y, dps):   _mp_init(dps); return Lambda_ring_of(y)
+def _task_Kraw(x, dps):    _mp_init(dps); return K_EM_raw_closed(x)
+def _task_KmidA(x, dps):   _mp_init(dps); return K_EM_mid_A_closed(x)
 
 def eval_weights_parallel(y_star, x_rel, dps=MPMATH_DPS_RUNTIME, max_workers=None):
     """Concurrent evaluation of heavy S¹ weights."""
     tasks = {
-        "K0":    (_task_K0,    (y_star, dps)),
-        "Lam":   (_task_Lam,   (y_star, dps)),
+        "Kring": (_task_Kring, (y_star, dps)),
+        "Lring": (_task_Lring, (y_star, dps)),
         "Kraw":  (_task_Kraw,  (x_rel,  dps)),
         "KmidA": (_task_KmidA, (x_rel,  dps)),
     }
@@ -474,16 +478,16 @@ def compute_all(alpha_in):
 
     # Ring reduction + shape
     y_star = solve_y_star(alpha_in)
-    S_star, zeta_geom, K0_y, Lam_y = S_of(y_star, alpha_in)
-    D      = (mp.mpf('4')/3)*S_star
+    Gamma_star, zeta_ring, K_ring_y, Lambda_ring_y = Gamma_str_of(y_star, alpha_in)
+    D      = (mp.mpf('4')/3)*Gamma_star
     rho    = 1/D
     x_rel  = rho / y_star
 
     # Heavy S¹ weights (parallel)
     if USE_PARALLEL:
         W = eval_weights_parallel(y_star, x_rel, dps=mp.mp.dps, max_workers=MAX_WORKERS)
-        K0_y, Lam_y = W["K0"], W["Lam"]
-        zeta_geom = (K0_y/(2*pi**2)) * Lam_y
+        K_ring_y, Lambda_ring_y = W["Kring"], W["Lring"]
+        zeta_ring = (K_ring_y/(2*pi**2)) * Lambda_ring_y
         K_EM_raw  = W["Kraw"]
         K_EM_mid_A= W["KmidA"]
     else:
@@ -494,7 +498,7 @@ def compute_all(alpha_in):
     zeta_soft   = (K_spec/(2*pi**2)) * LAMBDA["Lambda_ind"]        # Λ_ind ONLY
     K_EM_eff_A  = K_EM_mid_A * (1 - mp.mpf('0.5')*rho**2 * zeta_soft)
     N_eff_raw_A = N_eff_raw_A_closed(x_rel)
-    # Scalar completion: D_phys^S4(α, ζ(α)) as used in numerics
+    # Scalar completion: 𝓓_phys^S4(α, ζ(α))
     D_C         = LAMBDA["DC"]
     D_phys_S4   = D_C - (alpha_in/pi)*zeta_alpha + ((alpha_in*zeta_alpha)/pi)**2 / (4*D_C)
     N_eff_eff_A = N_eff_raw_A * (1 + rho**2 * D_phys_S4)
@@ -502,11 +506,11 @@ def compute_all(alpha_in):
 
     # Path B: Ward-preserving vector completions
     K_T     = K_T_closed(x_rel)
-    K_T_eff = K_T * (1 - mp.mpf('0.5') * rho**2 * zeta_geom) * (1 - mp.mpf('0.5') * rho**2 * zeta_alpha)
-    K_EM_raw_eff_B = K_EM_raw * (1 + mp.mpf('0.25') * rho**2 * zeta_geom) * (1 + mp.mpf('0.25') * rho**2 * zeta_alpha)
+    K_T_eff = K_T * (1 - mp.mpf('0.5') * rho**2 * zeta_ring) * (1 - mp.mpf('0.5') * rho**2 * zeta_alpha)
+    K_EM_raw_eff_B = K_EM_raw * (1 + mp.mpf('0.25') * rho**2 * zeta_ring) * (1 + mp.mpf('0.25') * rho**2 * zeta_alpha)
 
     # RG locks from geometry (β0≈8/π)
-    beta0            = beta0_from_DS(D/S_star)
+    beta0            = beta0_from_DS(D/Gamma_star)
     sigma_A, sigma_B = sigmas_from_beta0(beta0)
 
     # Masses
@@ -523,8 +527,8 @@ def compute_all(alpha_in):
     return {
         # shared
         "alpha_in": alpha_in, "ELL_P": ELL_P, "t_P": t_P,
-        "y_star": y_star, "S": S_star, "D": D, "rho": rho, "beta0": beta0,
-        "x_rel": x_rel, "K0": K0_y, "Lam": Lam_y, "zeta_geom": zeta_geom,
+        "y_star": y_star, "Gamma": Gamma_star, "D": D, "rho": rho, "beta0": beta0,
+        "x_rel": x_rel, "K_ring": K_ring_y, "Lambda_ring": Lambda_ring_y, "zeta_ring": zeta_ring,
         # spectrum & Coulomb
         "K_spec": K_spec, "L_list": L_list, "D_C": D_C, "D_phys_S4": D_phys_S4,
         # Λ-chain & ζ(α)
@@ -607,15 +611,15 @@ def main():
         ["α (input)",                nstr(R["alpha_in"], 20), PHYS["alpha_in"]["source"]],
         ["ℓ_P [m] = sqrt(ħG/c^3)",  nstr(R["ELL_P"], 26), ""],
         ["t_P [s] = sqrt(ħG/c^5)",  nstr(R["t_P"], 26), ""],
-        ["y* (shape root)",         nstr(R["y_star"], 24), "3 S'/S + (2/y − y)=0"],
-        ["S(y*)",                   nstr(R["S"], 24), "2+ζ_geom+αK0/8π²"],
-        ["D = 4S/3",                nstr(R["D"], 24), ""],
+        ["y* (shape root)",         nstr(R["y_star"], 24), "3 Γ'/Γ + (2/y − y)=0"],
+        ["Γ_str(y*)",               nstr(R["Gamma"], 24), "2+ζ_ring+αK_ring/8π²"],
+        ["D = 4Γ_str/3",            nstr(R["D"], 24), ""],
         ["ρ = 1/D",                 nstr(R["rho"], 24), ""],
         ["x = ρ/y*",                nstr(R["x_rel"], 24), ""],
-        ["K0(y*)",                  nstr(R["K0"], 24), ""],
-        ["Λ(y*)",                   nstr(R["Lam"], 24), ""],
-        ["ζ_geom(y*)",              nstr(R["zeta_geom"], 24), "[K0/(2π²)]Λ"],
-        ["β0 (from D/S)",           nstr(R["beta0"], 24), "≈ 8/π"],
+        ["K_ring(y*)",              nstr(R["K_ring"], 24), ""],
+        ["Λ_ring(y*)",              nstr(R["Lambda_ring"], 24), ""],
+        ["ζ_ring(y*)",              nstr(R["zeta_ring"], 24), "[K_ring/(2π²)]Λ_ring"],
+        ["β0 (from D/Γ_str)",       nstr(R["beta0"], 24), "≈ 8/π"],
     ]
     block = _format_table(["Variable / Formula", "Value", "Note"], shared_rows, title="=== SHARED GEOMETRY & CONSTANTS ===")
     show(block)
@@ -659,8 +663,8 @@ def main():
     # 5) Path B — vector (Ward product)
     pathB_rows = [
         ["K_T",              nstr(R["K_T"], 24), "2κ"],
-        ["K_T^{eff}",        nstr(R["K_T_eff"], 24), "·(1−½ρ²ζ_geom)(1−½ρ²ζ(α))"],
-        ["K_EM^{raw,eff}",   nstr(R["K_EM_raw_eff_B"], 24), "raw·(1+¼ρ²ζ_geom)(1+¼ρ²ζ(α))"],
+        ["K_T^{eff}",        nstr(R["K_T_eff"], 24), "·(1−½ρ²ζ_ring)(1−½ρ²ζ(α))"],
+        ["K_EM^{raw,eff}",   nstr(R["K_EM_raw_eff_B"], 24), "raw·(1+¼ρ²ζ_ring)(1+¼ρ²ζ(α))"],
         ["σ_B",              nstr(R["sigma_B"], 24), ""],
         ["m_B [MeV]",        nstr(R["mB"], 18), ""],
     ]
@@ -699,10 +703,8 @@ def main():
 
     # 9) Per-term effects (toggles) — reviewer audit
     # Path A:
-    #   Gaussian off → use FINAL K with raw instead of mid: K_final' = K_raw × (1 − ½ρ² ζ_soft)
     K_final_gauss_off = R["K_EM_raw"] * (1 - mp.mpf('0.5')*R["rho"]**2 * R["zeta_soft"])
     mA_noGaussian = mass_path_A(R["ELL_P"], R["D"], R["rho"], K_final_gauss_off, R["N_eff_eff_A"], pi, R["sigma_A"], R["alpha_in"], PHYS["c"]["value"], PHYS["hbar"]["value"], PHYS["e"]["value"])
-    #   Scalar completion off → use N_eff^{raw,A}
     mA_noScalar   = mass_path_A(R["ELL_P"], R["D"], R["rho"], R["K_EM_eff_A"], R["N_eff_raw_A"],     pi, R["sigma_A"], R["alpha_in"], PHYS["c"]["value"], PHYS["hbar"]["value"], PHYS["e"]["value"])
     effA_rows = [
         effect_line("A: Gaussian softening off (mid→raw)", R["mA"], mA_noGaussian),
