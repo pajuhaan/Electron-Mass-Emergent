@@ -4,28 +4,18 @@
 # =============================================================================
 #  Relator — Emergent Electron Mass (PAPER-ALIGNED NAMING: Γ_str, K_ring, ζ_ring)
 #  --------------------------------------------------------------------
-#  This program reproduces the paper's numerics with notation matched to the
-#  manuscript output:
-#    • Γ_str(y)  (was S(y))
-#    • K_ring(y) (was K0(y)),  Λ_ring(y) (was Λ(y)),  ζ_ring(y) (was ζ_geom)
-#    • Printed labels now use Γ_str, K_ring, Λ_ring, ζ_ring across reports
+#  Paper-facing printed coefficients (SI):
+#    • Path A: a_A [J·m], b_A [J/m³]
+#    • Path B: a_B [J·m], T  [J/m]
 #
-#  Path A (scalar):  K_EM^{mid,A} → K_EM^{eff,A}
-#    - mid  = raw × s_G(κ)                 (Gaussian softening on S¹)
-#    - effA = mid × [1 − ½ ρ² ζ_soft],     (ζ_soft from Λ_ind ONLY)
-#    - N_eff^{eff,A} = N_eff^{raw,A} × [1 + ρ² 𝓓_phys^S4(α, ζ(α))]
+#  Internal/composite (dimensionless) — printed but clearly separated:
+#    • INT_COMP_a_A, INT_COMP_b_A, INT_COMP_a_B, INT_COMP_T
+#  Diagnostic equality:
+#    • INT_DIAG_alpha_hat
 #
-#  Path B (vector), Ward-preserving products:
-#    K_T^eff = K_T·(1 − ½ρ² ζ_ring)·(1 − ½ρ² ζ(α))
-#    K_EM^{raw,eff} = K_EM^{raw}·(1 + ¼ρ² ζ_ring)·(1 + ¼ρ² ζ(α))
-#
-#  The code prints all named intermediates with paper-style symbols, performs
-#  per-term toggle audits, propagates constant uncertainties, and saves a
-#  checksumed report for reproducibility.
-#
-#  IMPORTANT (No double counting):
-#    - Path A's local EM kernel never uses ζ(α); it uses ζ_soft from Λ_ind only.
-#    - Bulk/vector effects enter Path A only via N_eff^{eff,A} through 𝓓_C and ζ(α).
+#  Notes:
+#    • Units column is included for every table.
+#    • All internal-only helpers are prefixed with INT_ to avoid confusion with paper symbols.
 # =============================================================================
 
 from dataclasses import dataclass
@@ -59,15 +49,17 @@ SAVE_REPORT = "checksum.txt"
 
 # ========================= Physical constants (SI) ===========================
 PHYS = {
-    "c":     {"value": mp.mpf('299792458.0'), "source": "SI (exact)",               "u_rel": mp.mpf('0')},
-    "e":     {"value": mp.mpf('1.602176634e-19'), "source": "SI (exact)",            "u_rel": mp.mpf('0')},
-    "hbar":  {"value": mp.mpf('1.054571817e-34'), "source": "SI (fixed h → ħ)",      "u_rel": mp.mpf('0')},
-    "G":     {"value": mp.mpf('6.67430e-11'),      "source": "CODATA 2022",          "u_rel": mp.mpf('2.2e-5')},
-    "alpha_in": {"value": mp.mpf('7.2973525643e-3'), "source": "CODATA 2022 (input)", "u_rel": mp.mpf('1.5e-10')},
+    "c":     {"value": mp.mpf('299792458.0'),     "source": "SI (exact)",                 "u_rel": mp.mpf('0')},
+    "e":     {"value": mp.mpf('1.602176634e-19'), "source": "SI (exact)",                 "u_rel": mp.mpf('0')},
+    "hbar":  {"value": mp.mpf('1.054571817e-34'), "source": "SI (fixed h → ħ)",           "u_rel": mp.mpf('0')},
+    "G":     {"value": mp.mpf('6.67430e-11'),     "source": "CODATA 2022",                "u_rel": mp.mpf('2.2e-5')},
+    "alpha_in": {"value": mp.mpf('7.2973525643e-3'), "source": "CODATA 2022 (input)",     "u_rel": mp.mpf('1.5e-10')},
     "m_e_exp_MeV": {"value": mp.mpf('0.51099895069'), "source": "CODATA 2022 (reporting only)", "u_rel": mp.mpf('0')}
 }
 
 # ================================ Utilities ==================================
+DIMLESS = "— (dimensionless)"
+
 def nstr(x, n=28): return mp.nstr(x, n)
 def eV_from_MeV(m): return m * mp.mpf('1e6')
 def ppm(rel): return mp.mpf('1e6') * rel
@@ -284,7 +276,7 @@ def Lambda_OUT_series(eta: mp.mpf, lmax: int = OUT_LBASE) -> mp.mpf:
         s += pi/((n+1)*(2*n + 1)) * (eta**(2*n + 1))
     return -s
 
-def Lambda_OUT(eta: mp.mpf, lmax: int = OUT_LBASE, mode: str = OUT_MODE) -> mp.mpf:
+def Lambda_OUT(eta: mp.mpf, lmax: int, mode: str = OUT_MODE) -> mp.mpf:
     return Lambda_OUT_series(eta, lmax) if mode == 'series' else \
            Lambda_OUT_exact(eta, lmax, gl_nodes=GL_NODES)
 
@@ -331,16 +323,16 @@ def gamma_eff(eta: mp.mpf, K: mp.mpf, DC_lock: mp.mpf, P_ir: mp.mpf) -> mp.mpf:
     """Effective gain γ_eff = γ_geom + γ_map(𝓓_C)."""
     return gamma_geom(eta) + (K / (2 * DC_lock)) * C0_GAUSS * P_ir
 
-def deltaLambda_chi_ladder_extra(eta: mp.mpf, K: mp.mpf, DC_lock: mp.mpf,
-                                 P_ir: mp.mpf, dLambda_OUT: mp.mpf) -> mp.mpf:
-    """χ-ladder closed resummation (extra term)."""
+def INT_deltaLambda_chi_ladder_extra(eta: mp.mpf, K: mp.mpf, DC_lock: mp.mpf,
+                                     P_ir: mp.mpf, dLambda_OUT: mp.mpf) -> mp.mpf:
+    """INTERNAL: χ-ladder resummation (extra term)."""
     k = mp.sinh(eta)/eta - 1
     x = (K / (2 * DC_lock)) * C0_GAUSS * P_ir
     return (-k * x**2 / (1 + k * x)) * P_ir * dLambda_OUT
 
-def deltaLambda_self_ladder(eta: mp.mpf, K: mp.mpf, P_ir: mp.mpf,
-                            Lambda_eff: mp.mpf, alpha: mp.mpf) -> mp.mpf:
-    """Self-ladder (Dyson-like) closed correction."""
+def INT_deltaLambda_self_ladder(eta: mp.mpf, K: mp.mpf, P_ir: mp.mpf,
+                                Lambda_eff: mp.mpf, alpha: mp.mpf) -> mp.mpf:
+    """INTERNAL: Self-ladder (Dyson-like) closed correction."""
     ggeom = gamma_geom(eta)
     k = mp.sinh(eta)/eta - 1
     ep = (alpha / pi) * (K / (2 * pi**2)) * P_ir * Lambda_eff
@@ -357,10 +349,10 @@ def build_Lambda_eff(alpha: mp.mpf, K: mp.mpf, L_list):
     g_eff = gamma_eff(ETA0, K, DC, P_ir)
     dSYNC = g_eff * P_ir * dOUT
     if CHI_LADDER_ON:
-        dSYNC += deltaLambda_chi_ladder_extra(ETA0, K, DC, P_ir, dOUT)
+        dSYNC += INT_deltaLambda_chi_ladder_extra(ETA0, K, DC, P_ir, dOUT)
     Lam_eff = base + dSYNC
     if SELF_LADDER_ON:
-        dSYNC += deltaLambda_self_ladder(ETA0, K, P_ir, Lam_eff, alpha)
+        dSYNC += INT_deltaLambda_self_ladder(ETA0, K, P_ir, Lam_eff, alpha)
         Lam_eff = base + dSYNC
     return {
         "P_ir": P_ir, "Lambda_ind": Lin, "Delta_UVIR": dUV,
@@ -376,8 +368,8 @@ def K_EM_raw_closed(x):
 
 def kappa_tension(x): return (x**2)/(1+x**2)
 
-def softening_factor(kappa):
-    """Gaussian EM-softening; stable as κ→0 via scaled erfc."""
+def INT_softening_factor(kappa):
+    """INTERNAL: Gaussian EM-softening; stable as κ→0 via scaled erfc."""
     if kappa <= mp.mpf('0'):
         return mp.mpf('1')
     if kappa < mp.mpf('1e-20'):
@@ -386,7 +378,7 @@ def softening_factor(kappa):
 
 def K_EM_mid_A_closed(x):
     """K_EM^{mid,A}(x) = K_EM^{raw}(x) × s_G(κ(x))   (purely geometric)."""
-    return K_EM_raw_closed(x) * softening_factor(kappa_tension(x))
+    return K_EM_raw_closed(x) * INT_softening_factor(kappa_tension(x))
 
 def N_eff_raw_A_closed(x):
     """N_eff^{raw,A}(x) = 2(1+κ)(1 − ½ κ²)."""
@@ -423,14 +415,11 @@ def mass_path_B(ELL_P, D, rho, K_EM_raw_eff_B, K_T_eff_B, sigma_B, y_star, alpha
     return (mkg*C**2)/ECHG/1e6  # MeV
 
 # ====================== α from equality (diagnostic only) ====================
-def alpha_eq_closed(KEM_eff_A, N_eff_eff_A, rho, K_T, K_T_eff_B, K_EM_raw, K_EM_raw_eff_B, y_star, alpha):
-    r"""Closed diagnostic for α̂ from A=B (micro factors explicit):
-       α̂ = (8/(3π^3)) (K_EM^{eff,A}/(N_eff^{eff,A} ρ)) (K_T/K_EM^{raw})^2
-            [ (K_T^{eff}/K_T)/(K_EM^{raw,eff}/K_EM^{raw}) ]^2 (1+f_{M1})^2.
-    """
+def INT_alpha_eq_closed(KEM_eff_A, N_eff_eff_A, rho, K_T, K_T_eff, K_EM_raw, K_EM_raw_eff_B, y_star, alpha):
+    r"""INTERNAL diagnostic for α̂ from A=B (micro factors explicit)."""
     fM1  = alpha*mp.e**(-(y_star**2)/2)*(y_star**2)/2
     base  = (K_T / K_EM_raw)**2
-    micro = ((K_T_eff_B / K_T) / (K_EM_raw_eff_B / K_EM_raw))**2
+    micro = ((K_T_eff / K_T) / (K_EM_raw_eff_B / K_EM_raw))**2
     return (mp.mpf('8')/(3*pi**3)) * (KEM_eff_A/(N_eff_eff_A*rho)) * base * micro * (1+fM1)**2
 
 # ============================ Parallel helpers ===============================
@@ -472,7 +461,7 @@ def compute_all(alpha_in):
     # Spectrum and Coulomb block
     K_spec, L_list = precompute_spectrum(M=SPEC_M_MAX, tol=SPEC_TOL)
 
-    # Λ-chain at α_in (exact + L-extrap), per Alpha code
+    # Λ-chain at α_in (exact + L-extrap)
     LAMBDA = build_Lambda_eff(alpha_in, K_spec, L_list)
     zeta_alpha = (K_spec/(2*pi**2)) * LAMBDA["Lambda_eff"]
 
@@ -495,9 +484,10 @@ def compute_all(alpha_in):
         K_EM_mid_A= K_EM_mid_A_closed(x_rel)
 
     # Path A: local EM (mid→eff) and scalar completion (raw→eff)
-    zeta_soft   = (K_spec/(2*pi**2)) * LAMBDA["Lambda_ind"]        # Λ_ind ONLY
+    zeta_soft   = (K_spec/(2*pi**2)) * LAMBDA["Lambda_ind"]        # Λ_ind ONLY (for Path A local)
     K_EM_eff_A  = K_EM_mid_A * (1 - mp.mpf('0.5')*rho**2 * zeta_soft)
     N_eff_raw_A = N_eff_raw_A_closed(x_rel)
+
     # Scalar completion: 𝓓_phys^S4(α, ζ(α))
     D_C         = LAMBDA["DC"]
     D_phys_S4   = D_C - (alpha_in/pi)*zeta_alpha + ((alpha_in*zeta_alpha)/pi)**2 / (4*D_C)
@@ -517,12 +507,34 @@ def compute_all(alpha_in):
     mA = mass_path_A(ELL_P, D, rho, K_EM_eff_A, N_eff_eff_A, ZETA_C, sigma_A, alpha_in, C, HBAR, ECHG)
     mB = mass_path_B(ELL_P, D, rho, K_EM_raw_eff_B, K_T_eff,    sigma_B, y_star,   alpha_in, C, HBAR, ECHG, use_fM1=True)
 
-    # Diagnostic: α̂ from equality (no scales)
-    alpha_hat = alpha_eq_closed(K_EM_eff_A, N_eff_eff_A, rho, K_T, K_T_eff, K_EM_raw, K_EM_raw_eff_B, y_star, alpha_in)
+    # Diagnostic: α̂ from equality (no scales) — INTERNAL
+    INT_DIAG_alpha_hat = INT_alpha_eq_closed(K_EM_eff_A, N_eff_eff_A, rho, K_T, K_T_eff, K_EM_raw, K_EM_raw_eff_B, y_star, alpha_in)
+
+    # Composite factors (dimensionless) — INTERNAL names and printed as internal
+    fM1 = alpha_in * mp.e**(-(y_star**2)/2) * (y_star**2) / 2
+    INT_COMP_a_A = (3 * N_eff_eff_A * (ZETA_C**4) * (rho**3)) / (32 * pi * alpha_in)
+    INT_COMP_b_A = mp.e**(-sigma_A/alpha_in) / K_EM_eff_A
+    INT_COMP_a_B = (rho * K_T_eff) / (2 * alpha_in * K_EM_raw_eff_B)
+    INT_COMP_T   = mp.e**(-sigma_B/alpha_in) * (1 + fM1)
+
+    # Manuscript–SI coefficients (EXACT names)
+    a_A = (4*pi*alpha_in*HBAR*C/rho) * K_EM_eff_A                         # [J·m]
+    b_A = (HBAR*C/(ELL_P**4)) * (N_eff_eff_A*(ZETA_C**4)*(rho**2)/8)      # [J/m^3]
+    a_B = (4*pi*alpha_in*HBAR*C/rho) * K_EM_raw_eff_B                      # [J·m]
+    T   = (HBAR*C/(ELL_P**2)) * K_T_eff * (1 + fM1) * mp.e**(-sigma_B/alpha_in)  # [J/m]
 
     # Reduced Compton radii
     rbarA = (HBAR*C) / (mA*1e6*ECHG)
     rbarB = (HBAR*C) / (mB*1e6*ECHG)
+
+    # 𝓓_C decomposition (diagnostics)
+    xi      = 2 * C0_UNI * alpha_in
+    D_sqrt  = (alpha_in/pi) * mp.sqrt(1 - xi)
+    D_Kterm = (alpha_in/pi) * (xi/2) * K_spec
+    D_series = mp.mpf('0')
+    if SPEC_M_MAX >= 2:
+        for (m, Lm) in L_list:
+            D_series += (alpha_in/pi) * ((xi/2)**m) * Lm
 
     return {
         # shared
@@ -544,8 +556,15 @@ def compute_all(alpha_in):
         # RG & masses
         "sigma_A": sigma_A, "sigma_B": sigma_B, "mA": mA, "mB": mB,
         "rbarA": rbarA, "rbarB": rbarB,
-        # equality alpha
-        "alpha_hat": alpha_hat
+        # equality alpha (INTERNAL diagnostic)
+        "INT_DIAG_alpha_hat": INT_DIAG_alpha_hat,
+        # composites (dimensionless, INTERNAL names)
+        "INT_COMP_a_A": INT_COMP_a_A, "INT_COMP_b_A": INT_COMP_b_A,
+        "INT_COMP_a_B": INT_COMP_a_B, "INT_COMP_T": INT_COMP_T, "INT_fM1": fM1,
+        # manuscript–SI coefficients (paper names)
+        "a_A": a_A, "b_A": b_A, "a_B": a_B, "T": T,
+        # DC-decomposition
+        "xi": xi, "D_sqrt": D_sqrt, "D_Kterm": D_Kterm, "D_series": D_series,
     }
 
 # ============================== Reporting layer ==============================
@@ -558,25 +577,6 @@ def effect_line(label, m_ref, m_alt):
     d_eV = eV_from_MeV(dMeV)
     rel  = dMeV / m_ref
     return [label, nstr(d_eV,14), nstr(100*rel,12), nstr(ppm(rel),12)]
-
-def _analytic_mass_exponents():
-    """
-    Exact scaling of m with constants (holding α fixed):
-      m ∝ ( √ħ * c^(5/2) ) / ( √G * e ) × F(α, geometry)
-    ⇒ log-derivatives:
-      d ln m / d ln ħ = +1/2
-      d ln m / d ln c = +5/2
-      d ln m / d ln G = -1/2
-      d ln m / d ln e = -1
-    """
-    return {"hbar": mp.mpf('0.5'), "c": mp.mpf('2.5'), "G": -mp.mpf('0.5'), "e": -mp.mpf('1.0')}
-
-def _alpha_log_sensitivity(alpha0, rel_step=mp.mpf('1e-6')):
-    a0 = alpha0; dr = mp.mpf(rel_step)
-    Rp = compute_all(a0*(1+dr)); Rm = compute_all(a0*(1-dr))
-    sA = (mp.log(Rp["mA"]) - mp.log(Rm["mA"])) / (2*dr)
-    sB = (mp.log(Rp["mB"]) - mp.log(Rm["mB"])) / (2*dr)
-    return sA, sB
 
 def main():
     alpha_in = PHYS["alpha_in"]["value"]
@@ -608,88 +608,133 @@ def main():
 
     # 1) Shared geometry & constants
     shared_rows = [
-        ["α (input)",                nstr(R["alpha_in"], 20), PHYS["alpha_in"]["source"]],
-        ["ℓ_P [m] = sqrt(ħG/c^3)",  nstr(R["ELL_P"], 26), ""],
-        ["t_P [s] = sqrt(ħG/c^5)",  nstr(R["t_P"], 26), ""],
-        ["y* (shape root)",         nstr(R["y_star"], 24), "3 Γ'/Γ + (2/y − y)=0"],
-        ["Γ_str(y*)",               nstr(R["Gamma"], 24), "2+ζ_ring+αK_ring/8π²"],
-        ["D = 4Γ_str/3",            nstr(R["D"], 24), ""],
-        ["ρ = 1/D",                 nstr(R["rho"], 24), ""],
-        ["x = ρ/y*",                nstr(R["x_rel"], 24), ""],
-        ["K_ring(y*)",              nstr(R["K_ring"], 24), ""],
-        ["Λ_ring(y*)",              nstr(R["Lambda_ring"], 24), ""],
-        ["ζ_ring(y*)",              nstr(R["zeta_ring"], 24), "[K_ring/(2π²)]Λ_ring"],
-        ["β0 (from D/Γ_str)",       nstr(R["beta0"], 24), "≈ 8/π"],
+        ["α (input)", nstr(R["alpha_in"], 20), DIMLESS, PHYS["alpha_in"]["source"]],
+        ["ℓ_P = sqrt(ħG/c^3)", nstr(R["ELL_P"], 26), "m", ""],
+        ["t_P = sqrt(ħG/c^5)", nstr(R["t_P"], 26), "s", ""],
+        ["y* (shape root)", nstr(R["y_star"], 24), DIMLESS, "3 Γ'/Γ + (2/y − y)=0"],
+        ["Γ_str(y*)", nstr(R["Gamma"], 24), DIMLESS, "2+ζ_ring+αK_ring/8π²"],
+        ["D = 4Γ_str/3", nstr(R["D"], 24), DIMLESS, ""],
+        ["ρ = 1/D", nstr(R["rho"], 24), DIMLESS, ""],
+        ["x = ρ/y*", nstr(R["x_rel"], 24), DIMLESS, ""],
+        ["K_ring(y*)", nstr(R["K_ring"], 24), DIMLESS, ""],
+        ["Λ_ring(y*)", nstr(R["Lambda_ring"], 24), DIMLESS, ""],
+        ["ζ_ring(y*)", nstr(R["zeta_ring"], 24), DIMLESS, "[K_ring/(2π²)]Λ_ring"],
+        ["β0 (from D/Γ_str)", nstr(R["beta0"], 24), DIMLESS, "≈ 8/π"],
     ]
-    block = _format_table(["Variable / Formula", "Value", "Note"], shared_rows, title="=== SHARED GEOMETRY & CONSTANTS ===")
+    block = _format_table(
+        ["Variable / Formula", "Value", "Units", "Note"],
+        shared_rows,
+        title="=== SHARED GEOMETRY & CONSTANTS ==="
+    )
     show(block)
 
-    # >>>>>>>>>>>>>>>>>>>>>>>>> ADDED: COLLAR & RADIUS DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<
-    # R_* from Compton map: R_* = D · \bar r   (for each path; show A, B, and average)
+    # >>>>>>>>>>>>>>>>>>>>>>>>> COLLAR & RADIUS DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<
     R_A   = R["D"] * R["rbarA"]
     R_B   = R["D"] * R["rbarB"]
     R_avg = (R_A + R_B) / 2
     ystar = R["y_star"]
-    sigcol_avg = ystar * R_avg               # σ_χ  (sigcol) on consensus radius
-    sigC_avg   = R_avg / mp.sqrt(mp.pi)      # σ_ℂ  (sigC) = R/√π
+
+    sigcol_avg = ystar * R_avg
+    sigC_avg   = R_avg / mp.sqrt(mp.pi)
+    sigmaC_over_R = mp.mpf('1')/mp.sqrt(mp.pi)
+
+    r0_avg   = (R["rbarA"] + R["rbarB"]) / 2
+    rbar_exp = reduced_compton_radius_from_MeV(PHYS["m_e_exp_MeV"]["value"])
 
     collar_rows = [
-        [r"R_A",           "stationary radius (Path A)",         nstr(R_A,   26)],
-        [r"R_B",           "stationary radius (Path B)",         nstr(R_B,   26)],
-        [r"R_avg",         "consensus radius = (R_A+R_B)/2",     nstr(R_avg, 26)],
-        [r"σ_χ (sigcol)",  "collar width (χ-channel), y·R_avg",  nstr(sigcol_avg, 26)],
-        [r"σ_ℂ (sigC)",    "C-space Gaussian width, R_avg/√π",   nstr(sigC_avg,   26)],
-        [r"y = σ_χ/R",     "shape factor at y*",                 nstr(ystar, 24)],
+        [r"R_A", "stationary radius (Path A)", nstr(R_A, 26), "m"],
+        [r"R_B", "stationary radius (Path B)", nstr(R_B, 26), "m"],
+        [r"R_avg", "consensus radius = (R_A+R_B)/2", nstr(R_avg, 26), "m"],
+        [r"σ_χ (sigcol)", "collar width (χ-channel), y*·R_avg", nstr(sigcol_avg, 26), "m"],
+        [r"σ_ℂ (sigC)", "C-space Gaussian width, R_avg/√π", nstr(sigC_avg, 26), "m"],
+        [r"σ_ℂ / R", "ratio", nstr(sigmaC_over_R, 24), DIMLESS],
+        [r"y = σ_χ/R", "shape factor at y*", nstr(ystar, 24), DIMLESS],
+        [r"r₀ (avg r̄_C)", "average reduced Compton radius (model)", nstr(r0_avg, 26), "m"],
+        [r"r̄_C(exp)", "reduced Compton radius from m_e (exp)", nstr(rbar_exp, 26), "m"],
     ]
-    block = _format_table(["Symbol", "Meaning", "Value"], collar_rows, title="=== COLLAR & RADIUS DIAGNOSTICS ===")
+    block = _format_table(["Symbol", "Meaning", "Value", "Units"], collar_rows,
+                          title="=== COLLAR & RADIUS DIAGNOSTICS ===")
     show(block)
-    # <<<<<<<<<<<<<<<<<<<<<<<< END ADDED BLOCK <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    # <<<<<<<<<<<<<<<<<<<<<<<< END COLLAR BLOCK <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     # 2) Spectrum & 𝓓_C(α)
     spec_rows = [
-        ["K (spectral)",  nstr(R["K_spec"], 26), ""],
-        ["𝓓_C(α)",        nstr(R["D_C"], 26),    ""],
-        ["𝓓_phys^S4",     nstr(R["D_phys_S4"], 26), "D_C − (α/π)ζ + (αζ/π)^2/(4 D_C)"],
+        ["K (spectral)", nstr(R["K_spec"], 26), DIMLESS, ""],
+        ["𝓓_C(α)", nstr(R["D_C"], 26), DIMLESS, ""],
+        ["𝓓_phys^S4", nstr(R["D_phys_S4"], 26), DIMLESS, "D_C − (α/π)ζ + (αζ/π)^2/(4 D_C)"],
     ]
-    block = _format_table(["Quantity", "Value", "Comment"], spec_rows, title="=== SPECTRUM & 𝓓_C(α) ===")
+    block = _format_table(["Quantity", "Value", "Units", "Comment"], spec_rows, title="=== SPECTRUM & 𝓓_C(α) ===")
+    show(block)
+
+    # === 𝓓_C(α) DECOMPOSITION & ζ(α) ===
+    dc_rows = [
+        ["ξ = 2 C0^{uni} α", nstr(R["xi"], 26), DIMLESS, ""],
+        ["(α/π)√(1−ξ)", nstr(R["D_sqrt"], 26), DIMLESS, "sqrt term (positive)"],
+        ["(α/π)(ξ/2)K", nstr(R["D_Kterm"], 26), DIMLESS, "K-term (subtracted in 𝓓_C)"],
+        [f"Σ (α/π)(ξ/2)^m L_{{2m}} (m=2..{SPEC_M_MAX})", nstr(R["D_series"], 26), DIMLESS,
+         "series (subtracted in 𝓓_C)"],
+        ["𝓓_C(α)", nstr(R["D_C"], 26), DIMLESS, "=(α/π)√(1−ξ) − (α/π)(ξ/2)K − Σ..."],
+        ["ζ(α) = (K/2π²)Λ_eff", nstr(R["zeta_alpha"], 24), DIMLESS, ""],
+    ]
+    block = _format_table(["Term", "Value", "Units", "Note"], dc_rows, title="=== 𝓓_C(α) DECOMPOSITION & ζ(α) ===")
     show(block)
 
     # 3) Λ-chain (exact + L-extrapolated)
     lam_rows = [
-        ["P_IR^(χ)(ℓ0)",           nstr(R["P_ir"], 26), ""],
-        ["Λ_ind",                   nstr(R["Lambda_ind"], 26), ""],
-        ["ΔΛ_UV→IR",                nstr(R["Delta_UVIR"], 26), ""],
-        ["ΔΛ_out (extrapolated)",   nstr(R["Delta_out"], 26), ""],
-        ["ΔΛ_sync (γ_eff + ladders)", nstr(R["Delta_sync"], 26), ""],
-        ["Λ_eff",                   nstr(R["Lambda_eff"], 26), ""],
-        ["ζ(α) = (K/2π²)Λ_eff",    nstr(R["zeta_alpha"], 24), ""],
-        ["ζ_soft = (K/2π²)Λ_ind",  nstr(R["zeta_soft"], 24), "Path A local only"],
+        ["P_IR^(χ)(ℓ0)", nstr(R["P_ir"], 26), DIMLESS, ""],
+        ["Λ_ind", nstr(R["Lambda_ind"], 26), DIMLESS, ""],
+        ["ΔΛ_UV→IR", nstr(R["Delta_UVIR"], 26), DIMLESS, ""],
+        ["ΔΛ_out (extrapolated)", nstr(R["Delta_out"], 26), DIMLESS, ""],
+        ["ΔΛ_sync (γ_eff + ladders)", nstr(R["Delta_sync"], 26), DIMLESS, ""],
+        ["Λ_eff", nstr(R["Lambda_eff"], 26), DIMLESS, ""],
+        ["ζ(α) = (K/2π²)Λ_eff", nstr(R["zeta_alpha"], 24), DIMLESS, ""],
+        ["ζ_soft = (K/2π²)Λ_ind", nstr(R["zeta_soft"], 24), DIMLESS, "Path A local only"],
     ]
-    block = _format_table(["Λ-chain term", "Value", "Note"], lam_rows, title="=== Λ-CHAIN (Alpha-Lock) ===")
+    block = _format_table(["Λ-chain term", "Value", "Units", "Note"], lam_rows, title="=== Λ-CHAIN (Alpha-Lock) ===")
     show(block)
 
-    # 4) Path A — scalar (mid→eff and raw→eff)
+    # === INTERNAL COMPOSITE FACTORS (dimensionless) ===
+    comp_rows = [
+        ["INT_COMP_a_A", nstr(R["INT_COMP_a_A"], 26), DIMLESS, "(3 N_eff^{eff,A} ζ_C^4 ρ^3)/(32π α)"],
+        ["INT_COMP_b_A", nstr(R["INT_COMP_b_A"], 26), DIMLESS, "e^{−σ_A/α}/K_EM^{eff,A}"],
+        ["INT_COMP_a_B", nstr(R["INT_COMP_a_B"], 26), DIMLESS, "(ρ K_T^{eff})/(2 α K_EM^{raw,eff})"],
+        ["INT_COMP_T",   nstr(R["INT_COMP_T"], 26),   DIMLESS, "(1+f_{M1})·e^{−σ_B/α}"],
+        ["INT_fM1",      nstr(R["INT_fM1"], 26),      DIMLESS, "(α/2) e^{−y*²/2} y*²"],
+        ["F_A",          nstr((R["INT_COMP_a_A"] * R["INT_COMP_b_A"]) ** (mp.mpf('1') / 4), 26), DIMLESS, "(a_A·b_A)^{1/4}"],
+        ["F_B",          nstr(mp.sqrt(R["INT_COMP_a_B"] * R["INT_COMP_T"]), 26),                DIMLESS, "√(a_B·T)"],
+    ]
+    block = _format_table(["Symbol (internal)", "Value", "Units", "Definition"], comp_rows,
+                          title="=== COMPOSITE FACTORS — INTERNAL (dimensionless) ===")
+    show(block)
+
+    # 4) Path A — scalar (mid→eff and raw→eff) + MANUSCRIPT SI
     pathA_rows = [
-        ["K_EM^{raw}",         nstr(R["K_EM_raw"], 26), ""],
-        ["K_EM^{mid,A}",       nstr(R["K_EM_mid_A"], 26), "raw × s_G(κ)"],
-        ["K_EM^{eff,A}",       nstr(R["K_EM_eff_A"], 26), "mid × (1 − ½ρ² ζ_soft)"],
-        ["N_eff^{raw,A}",      nstr(R["N_eff_raw_A"], 26), "2(1+κ)(1−½κ²)"],
-        ["N_eff^{eff,A}",      nstr(R["N_eff_eff_A"], 26), "× (1 + ρ² 𝓓_phys^S4)"],
-        ["σ_A",                nstr(R["sigma_A"], 24), ""],
-        ["m_A [MeV]",          nstr(R["mA"], 18), ""],
+        ["K_EM^{raw}", nstr(R["K_EM_raw"], 26), DIMLESS, "—"],
+        ["K_EM^{mid,A}", nstr(R["K_EM_mid_A"], 26), DIMLESS, "raw × s_G(κ)"],
+        ["K_EM^{eff,A}", nstr(R["K_EM_eff_A"], 26), DIMLESS, "mid × (1 − ½ρ² ζ_soft)"],
+        ["N_eff^{raw,A}", nstr(R["N_eff_raw_A"], 26), DIMLESS, "2(1+κ)(1−½κ²)"],
+        ["N_eff^{eff,A}", nstr(R["N_eff_eff_A"], 26), DIMLESS, "× (1 + ρ² 𝓓_phys^S4)"],
+        ["σ_A", nstr(R["sigma_A"], 24), DIMLESS, "RG lock"],
+        ["a_A", nstr(R["a_A"], 26), "J·m", "(4π α ħc/ρ)·K_EM^{eff,A}"],
+        ["b_A", nstr(R["b_A"], 26), "J/m³", "(ħc/ℓ_P⁴)·(N_eff^{eff,A} ζ_C⁴ ρ²/8)"],
+        ["m_A", nstr(R["mA"], 18), "MeV", "mass–energy"],
     ]
-    block = _format_table(["Path A Quantity", "Value", "Comment"], pathA_rows, title="=== PATH A — SCALAR CHANNEL ===")
+    block = _format_table(["Path A Quantity", "Value", "Units", "Comment / Definition"], pathA_rows,
+                          title="=== PATH A — SCALAR CHANNEL ===")
     show(block)
 
-    # 5) Path B — vector (Ward product)
+    # 5) Path B — vector (Ward product) + MANUSCRIPT SI
     pathB_rows = [
-        ["K_T",              nstr(R["K_T"], 24), "2κ"],
-        ["K_T^{eff}",        nstr(R["K_T_eff"], 24), "·(1−½ρ²ζ_ring)(1−½ρ²ζ(α))"],
-        ["K_EM^{raw,eff}",   nstr(R["K_EM_raw_eff_B"], 24), "raw·(1+¼ρ²ζ_ring)(1+¼ρ²ζ(α))"],
-        ["σ_B",              nstr(R["sigma_B"], 24), ""],
-        ["m_B [MeV]",        nstr(R["mB"], 18), ""],
+        ["K_T", nstr(R["K_T"], 24), DIMLESS, "2κ"],
+        ["K_T^{eff}", nstr(R["K_T_eff"], 24), DIMLESS, "·(1−½ρ²ζ_ring)(1−½ρ²ζ(α))"],
+        ["K_EM^{raw,eff}", nstr(R["K_EM_raw_eff_B"], 24), DIMLESS, "raw·(1+¼ρ²ζ_ring)(1+¼ρ²ζ(α))"],
+        ["σ_B", nstr(R["sigma_B"], 24), DIMLESS, "RG lock"],
+        ["a_B", nstr(R["a_B"], 26), "J·m", "(4π α ħc/ρ)·K_EM^{raw,eff}"],
+        ["T",   nstr(R["T"], 26),  "J/m", "(ħc/ℓ_P²)·K_T^{eff}·(1+f_{M1})·e^{−σ_B/α}"],
+        ["m_B", nstr(R["mB"], 18), "MeV", "mass–energy"],
     ]
-    block = _format_table(["Path B Quantity", "Value", "Comment"], pathB_rows, title="=== PATH B — VECTOR CHANNEL ===")
+    block = _format_table(["Path B Quantity", "Value", "Units", "Comment / Definition"], pathB_rows,
+                          title="=== PATH B — VECTOR CHANNEL ===")
     show(block)
 
     # 6) Errors vs experiment (eV & ppm)
@@ -717,13 +762,12 @@ def main():
     # 8) α̂ from equality (diagnostic)
     block = _format_table(
         ["Quantity", "Value", "Note"],
-        [["α̂ (from equality)", nstr(R["alpha_hat"], 22), "diagnostic; compare vs input α"]],
-        title="=== α FROM PATH EQUALITY (DIAGNOSTIC) ==="
+        [["INT_DIAG_alpha_hat", nstr(R["INT_DIAG_alpha_hat"], 22), "diagnostic; compare vs input α"]],
+        title="=== α FROM PATH EQUALITY (DIAGNOSTIC) — INTERNAL ==="
     )
     show(block)
 
     # 9) Per-term effects (toggles) — reviewer audit
-    # Path A:
     K_final_gauss_off = R["K_EM_raw"] * (1 - mp.mpf('0.5')*R["rho"]**2 * R["zeta_soft"])
     mA_noGaussian = mass_path_A(R["ELL_P"], R["D"], R["rho"], K_final_gauss_off, R["N_eff_eff_A"], pi, R["sigma_A"], R["alpha_in"], PHYS["c"]["value"], PHYS["hbar"]["value"], PHYS["e"]["value"])
     mA_noScalar   = mass_path_A(R["ELL_P"], R["D"], R["rho"], R["K_EM_eff_A"], R["N_eff_raw_A"],     pi, R["sigma_A"], R["alpha_in"], PHYS["c"]["value"], PHYS["hbar"]["value"], PHYS["e"]["value"])
@@ -735,7 +779,6 @@ def main():
     block = _format_table(["Toggle (Path A term)", "Δ [eV]", "Δ [%]", "Δ [ppm]"], effA_rows, title="=== PER-TERM EFFECTS — PATH A ===")
     show(block)
 
-    # Path B:
     mB_noF     = mass_path_B(R["ELL_P"], R["D"], R["rho"], R["K_EM_raw_eff_B"], R["K_T_eff"], R["sigma_B"], R["y_star"], R["alpha_in"], PHYS["c"]["value"], PHYS["hbar"]["value"], PHYS["e"]["value"], use_fM1=False)
     mB_noVecT  = mass_path_B(R["ELL_P"], R["D"], R["rho"], R["K_EM_raw_eff_B"], R["K_T"],     R["sigma_B"], R["y_star"], R["alpha_in"], PHYS["c"]["value"], PHYS["hbar"]["value"], PHYS["e"]["value"], use_fM1=True)
     mB_noVecE  = mass_path_B(R["ELL_P"], R["D"], R["rho"], R["K_EM_raw"],       R["K_T_eff"], R["sigma_B"], R["y_star"], R["alpha_in"], PHYS["c"]["value"], PHYS["hbar"]["value"], PHYS["e"]["value"], use_fM1=True)
@@ -751,6 +794,10 @@ def main():
     show(block)
 
     # 10) Uncertainty propagation (1σ)
+    def _analytic_mass_exponents():
+        # d ln m / d ln ħ = +1/2, d ln m / d ln c = +5/2, d ln m / d ln G = -1/2, d ln m / d ln e = -1
+        return {"hbar": mp.mpf('0.5'), "c": mp.mpf('2.5'), "G": -mp.mpf('0.5'), "e": -mp.mpf('1.0')}
+
     exps = _analytic_mass_exponents()
     def lines_from_analytic(const_key, urel, mA, mB):
         if urel == 0:
@@ -762,6 +809,14 @@ def main():
             pA    = s * urel * mp.mpf('1e6')
             pB    = s * urel * mp.mpf('1e6')
         return [const_key, nstr(urel,10), nstr(dA_eV,12), nstr(pA,10), nstr(dB_eV,12), nstr(pB,10), "analytic"]
+
+    # α sensitivity (small perturbation)
+    def _alpha_log_sensitivity(alpha0, rel_step=mp.mpf('1e-6')):
+        a0 = alpha0; dr = mp.mpf(rel_step)
+        Rp = compute_all(a0*(1+dr)); Rm = compute_all(a0*(1-dr))
+        sA = (mp.log(Rp["mA"]) - mp.log(Rm["mA"])) / (2*dr)
+        sB = (mp.log(Rp["mB"]) - mp.log(Rm["mB"])) / (2*dr)
+        return sA, sB
 
     sA, sB = _alpha_log_sensitivity(alpha_in, rel_step=mp.mpf('1e-6'))
     dA_alpha = abs(sA) * PHYS["alpha_in"]["u_rel"] * R["mA"]
@@ -787,12 +842,21 @@ def main():
 
     # 11) Constants summary (values, sources, uncertainties)
     const_rows = []
-    for key in ["c","e","hbar","G","alpha_in","m_e_exp_MeV"]:
+    const_units = {
+        "c": "m·s⁻¹",
+        "e": "C",
+        "hbar": "J·s",
+        "G": "m³·kg⁻¹·s⁻²",
+        "alpha_in": DIMLESS,
+        "m_e_exp_MeV": "MeV",
+    }
+    for key in ["c", "e", "hbar", "G", "alpha_in", "m_e_exp_MeV"]:
         d = PHYS[key]
         tag = key if key != "alpha_in" else "alpha_in (input)"
         if key == "m_e_exp_MeV": tag = "m_e_exp_MeV (reporting only)"
-        const_rows.append([tag, nstr(d["value"], 20), d["source"], nstr(d["u_rel"], 12)])
-    block = _format_table(["Constant", "Value", "Source", "rel 1σ"], const_rows, title="=== CONSTANTS (values, sources, 1σ) ===")
+        const_rows.append([tag, nstr(d["value"], 20), const_units[key], d["source"], nstr(d["u_rel"], 12)])
+    block = _format_table(["Constant", "Value", "Units", "Source", "rel 1σ"], const_rows,
+                          title="=== CONSTANTS (values, units, sources, 1σ) ===")
     show(block)
 
     # Optional: save consolidated report (+ SHA-256 checksum of content)
