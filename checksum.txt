@@ -1,7 +1,7 @@
 === RUN PROVENANCE & CONFIG ===
 | Key               | Value                       |
 |-------------------|-----------------------------|
-| Date (UTC)        | 2025-10-03T08:53:18.322002Z |
+| Date (UTC)        | 2025-10-03T13:02:03.564204Z |
 | Python            | 3.12.5                      |
 | Platform          | Windows-11-10.0.26100-SP0   |
 | mpmath            | 1.3.0                       |
@@ -32,6 +32,16 @@
 | Λ_ring(y*)             | 0.0565395768691   |                      |
 | ζ_ring(y*)             | 0.00119050775315  | [K_ring/(2π²)]Λ_ring |
 | β0 (from D/Γ_str)      | 2.54647908947     | ≈ 8/π                |
+
+=== COLLAR & RADIUS DIAGNOSTICS ===
+| Symbol       | Meaning                           |             Value |
+|--------------|-----------------------------------|-------------------|
+| R_A          | stationary radius (Path A)        | 1.03039331664e-12 |
+| R_B          | stationary radius (Path B)        | 1.03039331694e-12 |
+| R_avg        | consensus radius = (R_A+R_B)/2    | 1.03039331679e-12 |
+| σ_χ (sigcol) | collar width (χ-channel), y·R_avg | 1.45580034021e-12 |
+| σ_ℂ (sigC)   | C-space Gaussian width, R_avg/√π  | 5.8133717629e-13  |
+| y = σ_χ/R    | shape factor at y*                | 1.41285887291     |
 
 === SPECTRUM & 𝓓_C(α) ===
 | Quantity     |            Value | Comment                         |
@@ -128,6 +138,6 @@
 === CHECKSUM ===
 | Field                      | Value                                                            |
 |----------------------------|------------------------------------------------------------------|
-| SHA-256 (of above content) | bef54a58bb9ab271b5c601987cceaba4920dfad3b24f5742e066f906cb05bec8 |
-| Bytes (UTF-8)              | 8480                                                             |
-| Lines                      | 127                                                              |
+| SHA-256 (of above content) | 13c3a0acb11495b2830c89ef55a7cc6098ab57a675d4f39ec34fff2745cd3c5e |
+| Bytes (UTF-8)              | 9113                                                             |
+| Lines                      | 137                                                              |

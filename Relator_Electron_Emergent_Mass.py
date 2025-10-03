@@ -624,6 +624,27 @@ def main():
     block = _format_table(["Variable / Formula", "Value", "Note"], shared_rows, title="=== SHARED GEOMETRY & CONSTANTS ===")
     show(block)
 
+    # >>>>>>>>>>>>>>>>>>>>>>>>> ADDED: COLLAR & RADIUS DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<
+    # R_* from Compton map: R_* = D · \bar r   (for each path; show A, B, and average)
+    R_A   = R["D"] * R["rbarA"]
+    R_B   = R["D"] * R["rbarB"]
+    R_avg = (R_A + R_B) / 2
+    ystar = R["y_star"]
+    sigcol_avg = ystar * R_avg               # σ_χ  (sigcol) on consensus radius
+    sigC_avg   = R_avg / mp.sqrt(mp.pi)      # σ_ℂ  (sigC) = R/√π
+
+    collar_rows = [
+        [r"R_A",           "stationary radius (Path A)",         nstr(R_A,   26)],
+        [r"R_B",           "stationary radius (Path B)",         nstr(R_B,   26)],
+        [r"R_avg",         "consensus radius = (R_A+R_B)/2",     nstr(R_avg, 26)],
+        [r"σ_χ (sigcol)",  "collar width (χ-channel), y·R_avg",  nstr(sigcol_avg, 26)],
+        [r"σ_ℂ (sigC)",    "C-space Gaussian width, R_avg/√π",   nstr(sigC_avg,   26)],
+        [r"y = σ_χ/R",     "shape factor at y*",                 nstr(ystar, 24)],
+    ]
+    block = _format_table(["Symbol", "Meaning", "Value"], collar_rows, title="=== COLLAR & RADIUS DIAGNOSTICS ===")
+    show(block)
+    # <<<<<<<<<<<<<<<<<<<<<<<< END ADDED BLOCK <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     # 2) Spectrum & 𝓓_C(α)
     spec_rows = [
         ["K (spectral)",  nstr(R["K_spec"], 26), ""],
