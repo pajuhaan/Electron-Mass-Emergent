@@ -3,14 +3,14 @@
 r"""
 Mehrdad Pajuhaan
 
-Updated alpha-sector blocks used by the electron-mass calculations.
+Current alpha-sector blocks used by the electron-mass calculations.
 
-This module implements only the scalar Coulomb branch and the vector-shell
-representative that are used by the corrected electron-mass paths.
+This module implements only the current Relator scalar Coulomb branch and the
+vector-shell representative used by the electron-mass paths.
 
-Path A, RLVM, uses the scalar Coulomb branch DC_new(alpha) in the scalar count
-N_eff^eff,A.  Path B, RLTM, uses the vector overlap zeta_B in the finite Ward
-factors.  No combined scalar-vector bridge is computed in this codebase.
+Path A, RLVM, uses the scalar Coulomb branch DC(alpha) in the scalar count
+N_eff^eff,A.  Path B, RLTM, uses the vector overlap ζ_B in the finite Ward
+factors.  No scalar-vector total is inserted into the baseline code.
 """
 
 from __future__ import annotations
@@ -25,17 +25,17 @@ from scipy.optimize import brentq
 π = pi
 
 # ---------------------------------------------------------------------------
-# Current reduced vector-shell representative from the updated alpha paper.
+# Current reduced vector-shell representative from the current alpha paper.
 # ---------------------------------------------------------------------------
 # Completed shell-chain representative used only in the Path B finite Ward
 # vector overlap.  It is dimensionless.
-Λgeom_th = 0.691_683_146_106_991_026_716_159_707_634_574_473_9664
+ΛB_th = 0.691_683_146_106_991_026_716_159_707_634_574_473_9664
 
 # Central ALP coefficient, denoted K_ov or LockCoeff in the paper.
 Kov = (150.0 * π**2 - 8.0 * π**4 - 315.0) / (180.0 * π**6)
 
 # Vector overlap strength used in Path B finite Ward factors.
-ζB_default = Kov * Λgeom_th / (2.0 * π**2)
+ζB_default = Kov * ΛB_th / (2.0 * π**2)
 
 # Path A local inductive logarithm for the ring-local soft correction only.
 # This is not the completed vector shell chain.
@@ -49,7 +49,7 @@ Kov = (150.0 * π**2 - 8.0 * π**4 - 315.0) / (180.0 * π**6)
 #       D = (alpha/pi) sqrt(R_moth(D)),
 #       R_moth(D) = 1 - Theta_1_eff D + D^2 Phi_dyn(D).
 # The constants below are dimensionless values of the current finite-rank
-# scalar evaluator used by the alpha-sector update.
+# scalar evaluator used by the alpha-sector realization.
 Θ1_eff = 2.746_368_406_272_133_363_756_18
 s_uv = log(2.0)
 s_ir = 1.0 / (8.0 * π**2)
@@ -58,7 +58,7 @@ A_ir_5 = 2.850_875_150_489_833_584_190_00
 ρ_dyn_5 = 0.000_440_300_042_572_573_590_000_000
 χ_5 = ρ_dyn_5 * sqrt(s_uv * s_ir)
 
-# Reference values reported by the updated alpha-sector calculation.  They are
+# Reference values reported by the current alpha-sector calculation.  They are
 # included as provenance checks and are not used as fitted inputs.
 Dstar_th = 0.002_315_457_831_961_859_388_055_180_838_225_655_037
 alpha_star_th = 0.007_297_352_565_050_600_333_38
@@ -69,10 +69,10 @@ class AlphaSectorBlocks:
     """Dimensionless alpha-sector blocks used by Path A and Path B."""
 
     α: float
-    DC_new: float
+    DC: float
     ζB: float
     ζsoft: float
-    Λgeom: float
+    ΛB: float
     Kov: float
     R_moth: float
     Φ_dyn: float
@@ -95,13 +95,13 @@ def R_moth(D: float) -> float:
 
 
 @lru_cache(maxsize=4096)
-def DC_new(alpha: float) -> float:
-    """Return the updated scalar Coulomb branch DC_new(alpha).
+def DC(alpha: float) -> float:
+    """Return the current Relator scalar Coulomb branch DC(alpha).
 
     The equation solved is
         D - (alpha/pi) sqrt(R_moth(D)) = 0.
-    The positive root near alpha/pi is selected.  This is the scalar branch used
-    in the Path A scalar count.
+    The positive root near alpha/pi is selected.  This is the scalar Coulomb
+    branch used in the Path A scalar count.
     """
     if alpha <= 0.0:
         raise ValueError("alpha must be positive")
@@ -118,19 +118,19 @@ def DC_new(alpha: float) -> float:
     while residual(hi) <= 0.0:
         hi *= 2.0
         if hi > 1.0:
-            raise RuntimeError("failed to bracket DC_new root")
+            raise RuntimeError("failed to bracket DC root")
     return brentq(residual, lo, hi, xtol=1.0e-17, rtol=1.0e-15, maxiter=200)
 
 
 def build_alpha_blocks(alpha: float, *, ζB: float = ζB_default, ζsoft: float = ζsoft_default) -> AlphaSectorBlocks:
     """Build the dimensionless alpha-sector block bundle at the supplied alpha."""
-    D = DC_new(alpha)
+    D = DC(alpha)
     return AlphaSectorBlocks(
         α=alpha,
-        DC_new=D,
+        DC=D,
         ζB=ζB,
         ζsoft=ζsoft,
-        Λgeom=Λgeom_th,
+        ΛB=ΛB_th,
         Kov=Kov,
         R_moth=R_moth(D),
         Φ_dyn=Phi_dyn(D),

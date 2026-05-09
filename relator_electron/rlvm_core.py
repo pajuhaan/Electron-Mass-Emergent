@@ -7,11 +7,11 @@ Path A core, Relator-Locked Vacuum-in-Volume Model, RLVM.
 
 Baseline physics implemented here
 ---------------------------------
-1. The Path A scalar channel uses DC_new(alpha), the updated scalar mother-law
-   Coulombic branch from the alpha-sector update.
+1. The Path A scalar channel uses DC(alpha), the current Relator scalar
+   Coulomb branch imported from the alpha-sector module.
 2. The Path A local electromagnetic kernel contains only the ring-local induced
-   scalar zeta_soft built from Lambda_ind.
-3. The completed vector-shell factor zeta_B is not inserted into K_EM^eff,A.
+   scalar ζ_soft built from Lambda_ind.
+3. The completed vector-shell factor ζ_B is not inserted into K_EM^eff,A.
 """
 
 from __future__ import annotations
@@ -51,7 +51,7 @@ def compute_rlvm(
     alpha_blocks: AlphaSectorBlocks,
     constants: PhysicalConstants = CONSTANTS,
 ) -> RLVMResult:
-    """Compute the RLVM path with the updated scalar DC_new branch."""
+    """Compute the RLVM path with the current scalar DC branch."""
     α = constants.α
     ρ = geometry.ρstar
     x = geometry.x
@@ -63,7 +63,7 @@ def compute_rlvm(
     K_eff_A = Kmid * (1.0 - 0.5 * ρ**2 * alpha_blocks.ζsoft)
 
     Nraw = N_eff_raw_A(x)
-    Neff = Nraw * (1.0 + ρ**2 * alpha_blocks.DC_new)
+    Neff = Nraw * (1.0 + ρ**2 * alpha_blocks.DC)
 
     ζC = π
     σA = geometry.σA

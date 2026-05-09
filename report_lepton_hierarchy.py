@@ -6,8 +6,8 @@ Mehrdad Pajuhaan
 RLVM electron anchor lifted through the imported charged-lepton hierarchy.
 
 The ladder is dimensionless and is applied only after the Path A electron anchor
-has been formed.  It does not modify the RLVM electron kernel, DC_new scalar
-count, Planck prefactor, or sigma_A.
+has been formed.  It does not modify the RLVM electron kernel, the current
+Relator scalar Coulomb branch DC(α), the Planck prefactor, or sigma_A.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from functools import lru_cache
 from math import atan, atanh, exp, log, pi, sin, sinh, sqrt
 from scipy.integrate import quad
 
-from relator_electron.alpha_sector import DC_new, Kov
+from relator_electron.alpha_sector import DC as scalar_DC, Kov
 from relator_electron.common import CONSTANTS, constants_table, format_float, make_console, ppm, print_header, rich_table
 from relator_electron.pipeline import run_baseline
 
@@ -86,12 +86,12 @@ def kappa_curv(n: int) -> float:
     return sinh(η) / η - 1.0
 
 
-def X_n(n: int, DC: float) -> float:
-    return Kov / (2.0 * DC) * C0_GAUSS * P_IR(ℓ_n(n))
+def X_n(n: int, DC_scalar: float) -> float:
+    return Kov / (2.0 * DC_scalar) * C0_GAUSS * P_IR(ℓ_n(n))
 
 
-def gamma_lad(n: int, DC: float) -> tuple[float, float]:
-    X = X_n(n, DC)
+def gamma_lad(n: int, DC_scalar: float) -> tuple[float, float]:
+    X = X_n(n, DC_scalar)
     Γgeom = gamma_geom(n)
     Γmap = w_n(n) * k_n(n) * X / (1.0 + kappa_curv(n) * w_n(n) * k_n(n) * X)
     γ = Γmap / (Γgeom + Γmap)
@@ -100,19 +100,20 @@ def gamma_lad(n: int, DC: float) -> tuple[float, float]:
 
 
 def ladder_logs(alpha: float) -> dict[str, float]:
-    DC = DC_new(alpha)
-    γ1, N1 = gamma_lad(1, DC)
-    γ2, N2 = gamma_lad(2, DC)
-    γ3, N3 = gamma_lad(3, DC)
+    """Return the imported charged-lepton ladder logs at the supplied alpha."""
+    DC_scalar = scalar_DC(alpha)
+    γ1, N1 = gamma_lad(1, DC_scalar)
+    γ2, N2 = gamma_lad(2, DC_scalar)
+    γ3, N3 = gamma_lad(3, DC_scalar)
 
     L1 = 0.0
     L2 = L_core(2) - γ2 * log(N1 / N2)
     L3 = L_core(3) - γ3 * log(N1 / N3)
-    ΔL1 = DC * (0.0 * log(2.0) - log(1.0))
-    ΔL2 = DC * (1.0 * log(2.0) - log(2.0))
-    ΔL3 = DC * (2.0 * log(2.0) - log(3.0))
+    ΔL1 = DC_scalar * (0.0 * log(2.0) - log(1.0))
+    ΔL2 = DC_scalar * (1.0 * log(2.0) - log(2.0))
+    ΔL3 = DC_scalar * (2.0 * log(2.0) - log(3.0))
     return {
-        "DC_new": DC,
+        "DC": DC_scalar,
         "L_e_cp1": L1,
         "L_mu_cp1": L2,
         "L_tau_cp1": L3,
@@ -130,7 +131,7 @@ def ladder_logs(alpha: float) -> dict[str, float]:
 
 def main() -> None:
     console = make_console()
-    print_header(console, "RLVM charged-lepton hierarchy report", "Dimensionless ladder applied to the updated Path A anchor. Author: Mehrdad Pajuhaan")
+    print_header(console, "RLVM charged-lepton hierarchy report", "Dimensionless ladder applied to the current Path A anchor. Author: Mehrdad Pajuhaan")
     console.print(constants_table(CONSTANTS))
 
     run = run_baseline()
@@ -138,10 +139,10 @@ def main() -> None:
     m_e_anchor = run.rlvm.m_A_MeV
 
     ladder_rows = [
-        ("m_e anchor", format_float(m_e_anchor, 16), "MeV", "updated RLVM Path A"),
+        ("m_e anchor", format_float(m_e_anchor, 16), "MeV", "baseline RLVM Path A"),
         ("core-log convention", CORE_LOG_CONVENTION, "—", "imported hierarchy numerical convention"),
-        ("DC_new", format_float(logs["DC_new"], 16), "dimensionless", "scalar mother branch"),
-        ("Delta L_tau^DC", format_float(logs["DeltaL_tau_DC"], 16), "dimensionless", "DC_new ln(4/3)"),
+        ("DC(α)", format_float(logs["DC"], 16), "dimensionless", "current Relator scalar Coulomb branch"),
+        ("Delta L_tau^(DC)", format_float(logs["DeltaL_tau_DC"], 16), "dimensionless", "DC(α) ln(4/3)"),
         ("N1,N2,N3", f"{format_float(logs['N1'], 12)}, {format_float(logs['N2'], 12)}, {format_float(logs['N3'], 12)}", "dimensionless", "sync normalizers"),
         ("gamma2,gamma3", f"{format_float(logs['gamma2'], 12)}, {format_float(logs['gamma3'], 12)}", "dimensionless", "TT map shares"),
     ]

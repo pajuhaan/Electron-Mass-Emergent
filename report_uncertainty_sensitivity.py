@@ -45,7 +45,7 @@ def central_log_sensitivity_alpha(base_run, rel_step: float = 1.0e-6) -> tuple[f
 
 def main() -> None:
     console = make_console()
-    print_header(console, "Uncertainty and sensitivity report", "Updated DC_new and finite Ward baseline. Author: Mehrdad Pajuhaan")
+    print_header(console, "Uncertainty and sensitivity report", "Current DC(α) and finite Ward baseline. Author: Mehrdad Pajuhaan")
     console.print(constants_table(CONSTANTS))
 
     base = run_baseline()
@@ -85,12 +85,12 @@ def main() -> None:
     console.print(rich_table("Combined one-sigma uncertainty", ("Path", "RSS [eV]", "RSS [ppm]"), total_rows))
 
     ρ = base.geometry.ρstar
-    DC = base.alpha_blocks.DC_new
+    DC = base.alpha_blocks.DC
     dlnNeff_dDC = ρ**2 / (1.0 + ρ**2 * DC)
     local_rows = [
         ("Path A", "d ln m_A / d ln K_EM_eff,A", "-1/4", "aggregate kernel"),
         ("Path A", "d ln m_A / d ln N_eff_eff,A", "+1/4", "aggregate scalar count"),
-        ("Path A", "d ln m_A / d DC_new", format_float(0.25 * dlnNeff_dDC, 14), "fixed N_raw and rho*"),
+        ("Path A", "d ln m_A / d DC(α)", format_float(0.25 * dlnNeff_dDC, 14), "fixed N_raw and rho*"),
         ("Path A", "d ln m_A / d sigma_A", format_float(-1.0 / (4.0 * CONSTANTS.α), 14), "explicit exponential"),
         ("Path B", "d ln m_B / d ln K_T_eff,B", "+1/2", "aggregate tension kernel"),
         ("Path B", "d ln m_B / d ln K_EM_eff,B", "-1/2", "aggregate EM kernel"),

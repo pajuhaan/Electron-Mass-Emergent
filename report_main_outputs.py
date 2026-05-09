@@ -3,11 +3,11 @@
 """
 Mehrdad Pajuhaan
 
-Main numerical report for the updated Relator electron-mass calculation.
+Main numerical report for the current Relator electron-mass calculation.
 
 Constants used by this report are imported from relator_electron.common.CONSTANTS
-and printed at the top of the output.  The calculation uses the updated scalar
-mother-law DC_new in Path A and finite Ward powers in Path B.
+and printed at the top of the output.  The calculation uses the current Relator scalar
+Coulomb branch DC(α) in Path A and finite Ward powers in Path B.
 """
 
 from __future__ import annotations
@@ -28,8 +28,8 @@ def main() -> None:
 
     print_header(
         console,
-        "Updated Relator electron-mass run",
-        "Path A uses DC_new; Path B uses finite Ward powers. Author: Mehrdad Pajuhaan",
+        "Current Relator electron-mass run",
+        "Path A uses DC(α); Path B uses finite Ward powers. Author: Mehrdad Pajuhaan",
     )
     console.print(constants_table(c))
 
@@ -53,23 +53,23 @@ def main() -> None:
 
     alpha_rows = [
         ("Kov", format_float(a.Kov, 16), "dimensionless", "ALP angular overlap coefficient"),
-        ("Lambda_geom^(th)", format_float(a.Λgeom, 16), "dimensionless", "current reduced vector representative"),
-        ("zeta_B", format_float(a.ζB, 16), "dimensionless", "Kov Lambda_geom /(2π²), Path B only"),
+        ("Lambda_B^(th)", format_float(a.ΛB, 16), "dimensionless", "current reduced vector representative"),
+        ("ζ_B", format_float(a.ζB, 16), "dimensionless", "Kov Lambda_B^(th)/(2π²), Path B only"),
         ("Lambda_ind", format_float(Λind, 16), "dimensionless", "ring-local inductive logarithm"),
-        ("zeta_soft", format_float(a.ζsoft, 16), "dimensionless", "Kov Lambda_ind /(2π²), Path A local EM only"),
-        ("DC_new(alpha)", format_float(a.DC_new, 16), "dimensionless", "updated scalar mother-law branch"),
-        ("R_moth(DC_new)", format_float(a.R_moth, 16), "dimensionless", "scalar mother radicand"),
-        ("Phi_dyn(DC_new)", format_float(a.Φ_dyn, 16), "dimensionless", "rank-5 visible dynamic response"),
+        ("ζ_soft", format_float(a.ζsoft, 16), "dimensionless", "Kov Lambda_ind/(2π²), Path A local EM only"),
+        ("DC(α)", format_float(a.DC, 16), "dimensionless", "current Relator scalar Coulomb branch"),
+        ("R_moth(DC)", format_float(a.R_moth, 16), "dimensionless", "scalar mother-law radicand"),
+        ("Phi_dyn(DC)", format_float(a.Φ_dyn, 16), "dimensionless", "rank-5 scalar dynamic response"),
     ]
-    console.print(rich_table("Updated alpha-sector blocks", ("Quantity", "Value", "Unit", "Role"), alpha_rows))
+    console.print(rich_table("Current alpha-sector blocks", ("Quantity", "Value", "Unit", "Role"), alpha_rows))
 
     pathA_rows = [
         ("K_EM_raw", format_float(A.K_EM_raw, 16), "dimensionless", "raw along-ring elliptic kernel"),
         ("s_G", format_float(A.sG, 16), "dimensionless", "Gaussian Maxwell softening"),
         ("K_EM_mid,A", format_float(A.K_EM_mid_A, 16), "dimensionless", "K_EM_raw s_G"),
-        ("K_EM_eff,A", format_float(A.K_EM_eff_A, 16), "dimensionless", "mid × (1 - 1/2 rho*² zeta_soft)"),
+        ("K_EM_eff,A", format_float(A.K_EM_eff_A, 16), "dimensionless", "mid × (1 - 1/2 rho*² ζ_soft)"),
         ("N_eff_raw,A", format_float(A.N_eff_raw_A, 16), "dimensionless", "2(1+kappa)(1-kappa²/2)"),
-        ("N_eff_eff,A", format_float(A.N_eff_eff_A, 16), "dimensionless", "raw × (1 + rho*² DC_new)"),
+        ("N_eff_eff,A", format_float(A.N_eff_eff_A, 16), "dimensionless", "raw × (1 + rho*² DC(α))"),
         ("a_A", format_float(A.a_A, 16), "J m", "1/R coefficient"),
         ("b_A", format_float(A.b_A, 16), "J m⁻³", "R³ coefficient before exponential"),
         ("R_A", format_float(A.R_A, 16), "m", "stationary closure radius"),
@@ -82,7 +82,7 @@ def main() -> None:
         ("K_EM_raw", format_float(B.K_EM_raw, 16), "dimensionless", "raw along-ring elliptic kernel"),
         ("K_T_raw,B", format_float(B.K_T_raw_B, 16), "dimensionless", "2 kappa_T"),
         ("delta_loc", format_float(B.delta_loc, 16), "dimensionless", "rho*² ZigmaRing"),
-        ("delta_bulk", format_float(B.delta_bulk, 16), "dimensionless", "rho*² zeta_B"),
+        ("delta_bulk", format_float(B.delta_bulk, 16), "dimensionless", "rho*² ζ_B"),
         ("Ward T loc", format_float(B.ward_T_loc, 16), "dimensionless", "(1+delta_loc)^(-1/2)"),
         ("Ward T bulk", format_float(B.ward_T_bulk, 16), "dimensionless", "(1+delta_bulk)^(-1/2)"),
         ("Ward EM loc", format_float(B.ward_EM_loc, 16), "dimensionless", "(1+delta_loc)^(1/4)"),

@@ -32,7 +32,7 @@ def mass_from_G(C_path: float, G_value: float) -> float:
 
 def main() -> None:
     console = make_console()
-    print_header(console, "Emergent G inversion", "Uses updated DC_new and finite Ward path coefficients. Author: Mehrdad Pajuhaan")
+    print_header(console, "Emergent G inversion", "Uses current DC(α) and finite Ward path coefficients. Author: Mehrdad Pajuhaan")
     console.print(constants_table(CONSTANTS))
 
     run = run_baseline()

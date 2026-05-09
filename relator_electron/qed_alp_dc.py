@@ -7,15 +7,15 @@ Reference-only QED+ALP scalar branch for an isolated diagnostic report.
 
 This module implements the retained M=5 QED-induced scalar branch described in
 Alpha.tex.  It is deliberately separate from the primary Relator scalar branch
-`DC_new(alpha)` used by the baseline electron-mass code.
+`DC(α)` used by the baseline electron-mass code.
 
 The diagnostic branch is
 
-    D_QED^[5](x) = sum_{n=1}^5 c_n^QED x^n,        x = alpha/pi,
+    DCQEDALP(alpha) = sum_{n=1}^5 c_n^QED (alpha/pi)^n,
 
 where the coefficients c_n^QED are the retained scalar coefficients obtained
 from the pure-photonic QED benchmark through the ALP bridge in the alpha paper.
-Only the scalar branch D_QED^[5] is exported here.
+Only the scalar audit branch DCQEDALP is exported here.
 
 Nothing in this module is used by the baseline Path A or Path B calculations.
 The report that imports it is a separate one-way diagnostic.
@@ -64,7 +64,7 @@ class QEDALPBranch:
 
 
 def DC_qed_alp(alpha: float, order: int = 5) -> float:
-    """Evaluate the retained QED+ALP scalar branch D_QED^[M](alpha/pi).
+    """Evaluate the retained QED+ALP scalar branch DCQEDALP_M(alpha).
 
     Parameters
     ----------
@@ -100,7 +100,7 @@ def build_qed_alp_branch(alpha: float, order: int = 5) -> QEDALPBranch:
 
 
 def solve_alpha_qed_alp_target(order: int = 5) -> float:
-    """Solve D_QED^[M](alpha/pi) = Dstar_QED_ALP_target.
+    """Solve DCQEDALP_M(alpha) = Dstar_QED_ALP_target.
 
     This reproduces the reference-only inverse-alpha diagnostic in the alpha
     paper.  It is not used in the electron-mass baseline.

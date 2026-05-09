@@ -3,7 +3,7 @@
 """
 Mehrdad Pajuhaan
 
-Pipeline assembly for the updated Relator electron-mass calculation.
+Pipeline assembly for the Relator electron-mass calculation.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from math import exp, pi
 
 from scipy.optimize import brentq
 
-from .alpha_sector import build_alpha_blocks, DC_new
+from .alpha_sector import build_alpha_blocks, DC
 from .common import PhysicalConstants, CONSTANTS
 from .geometry import build_geometry
 from .rlvm_core import RLVMResult, compute_rlvm
@@ -46,8 +46,8 @@ def run_baseline(alpha: float = CONSTANTS.α, G: float = CONSTANTS.G) -> FullRun
 def alpha_fixed_point_map(alpha_unknown: float, run: FullRun) -> float:
     """Path A / Path B equality map at the fixed shared locked geometry.
 
-    The scalar entry is always DC_new(alpha).  The vector-shell representative
-    zeta_B is a fixed Path B Ward input of the selected run.
+    The scalar entry is always the current Relator DC(alpha).  The vector-shell
+    representative ζ_B is a fixed Path B Ward input of the selected run.
     """
     g = run.geometry
     A = run.rlvm
@@ -55,11 +55,11 @@ def alpha_fixed_point_map(alpha_unknown: float, run: FullRun) -> float:
     ab = run.alpha_blocks
     ρ = g.ρstar
 
-    D_scalar = DC_new(alpha_unknown)
+    D_scalar = DC(alpha_unknown)
     Neff = A.N_eff_raw_A * (1.0 + ρ**2 * D_scalar)
     fM1 = 0.5 * alpha_unknown * g.ystar**2 * exp(-0.5 * g.ystar**2)
 
-    # zeta_B is the vector-shell representative selected by the run.  It enters
+    # ζ_B is the vector-shell representative selected by the run.  It enters
     # only through Path B finite Ward factors.
     δloc = B.delta_loc
     δbulk = ρ**2 * ab.ζB

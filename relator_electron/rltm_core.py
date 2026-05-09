@@ -10,7 +10,7 @@ Baseline physics implemented here
 1. The Path B vector channel uses finite Ward powers, not the linearized
    O(rho_star^2) truncation.
 2. Near-edge geometry enters through delta_loc = rho_star^2 ZigmaRing.
-3. Bulk vector completion enters through delta_bulk = rho_star^2 zeta_B.
+3. Bulk vector completion enters through delta_bulk = rho_star^2 ζ_B.
 4. No Path A Gaussian softening factor is inserted into Path B.
 """
 
