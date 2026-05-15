@@ -1,4 +1,4 @@
-# Emergent Electron Mass from Two-Space Boundary numerical code
+# Emergent Electron Mass from Two-Space Boundary -- Numerical Code
 
 Author: Mehrdad Pajuhaan
 
