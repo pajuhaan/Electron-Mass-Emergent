@@ -3,8 +3,7 @@
 Author: Mehrdad Pajuhaan
 
 Repository: https://github.com/pajuhaan/Electron-Mass-Emergent  
-Zenodo concept DOI: https://doi.org/10.5281/zenodo.17219278  
-Zenodo release DOI: https://doi.org/10.5281/zenodo.17219279  
+DOI: https://doi.org/10.5281/zenodo.17219278  
 Paper: https://www.researchgate.net/publication/396387730_Emergent_Electron_Mass_from_Two-Space_Boundary
 
 This repository contains the cleaned numerical implementation for the current Relator electron-mass calculation. The code evaluates the two closed rest-frame electron-mass paths used in the manuscript, with the current Relator scalar Coulomb branch in Path A and the finite Ward vector/tension completion in Path B.
