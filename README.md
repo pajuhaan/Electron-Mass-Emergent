@@ -12,7 +12,7 @@ All formulas in this README are written with explicit mathematical notation rath
 
 ## Abstract
 
-We formulate a candidate rest-frame closure for the electron branch as the stationary equilibrium of a locked Gaussian ring satisfying $R\Omega=c$ in a two-space kinematics, with generator space $\mathcal C$ separated from propagation space $\mathbb R^3$. Two independent closures are evaluated on the same locked shape data. Path A is the scalar vacuum-in-volume model, RLVM, while Path B is the tangential vector-tension model, RLTM.
+We formulate a candidate rest-frame closure for the electron branch as the stationary equilibrium of a locked Gaussian ring satisfying $R\omega=c$ in a two-space kinematics, with generator space $\mathcal C$ separated from propagation space $\mathbb R^3$. Two independent closures are evaluated on the same locked shape data. Path A is the scalar vacuum-in-volume model, RLVM, while Path B is the tangential vector-tension model, RLTM.
 
 The only microscopic length inserted into the closure prefactors is $\ell_P=\sqrt{\hbar G/c^3}$, and all remaining factors are dimensionless functions of the locked geometry, $\alpha$, and the assigned scalar or vector completion. The corresponding Planck mass is $m_P=\sqrt{\hbar c/G}=\hbar/(c\ell_P)$.
 
@@ -32,7 +32,7 @@ This inversion is a consistency check, not a measurement of $G$. The constructio
 
 ### Shared Relator lock
 
-The shared locked geometry is built from the two-space boundary condition $R\Omega=c$. The resolved closure radius is denoted by $R$, while the observable rest-clock radius is $r_{\mathrm{lock}}=R/D$. For a branch mass $m_\bullet$, the readout relation is $m_\bullet=D\hbar/(cR_\bullet)$.
+The shared locked geometry is built from the two-space boundary condition $R\omega=c$. The resolved closure radius is denoted by $R$, while the observable rest-clock radius is $r_{\mathrm{lock}}=R/D$. For a branch mass $m_\bullet$, the readout relation is $m_\bullet=D\hbar/(cR_\bullet)$.
 
 The geometry root is $y_\star$, the transverse scale is $\rho_\star=1/D$, and the locked ratio is $x=\rho_\star/y_\star$. The current run uses $D=2.668305228471116$, $\rho_\star=0.3747697187450251$, $y_\star=1.412858872914209$, and $x=0.2652563011987268$.
 
